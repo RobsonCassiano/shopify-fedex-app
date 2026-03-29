@@ -1,0 +1,24 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "ef418bebd771f7c9a7c619c260a32389"
+name = "FedEx Ship & PSDU"
+application_url = "https://fedex-shipping-api.onrender.com"
+embedded = true
+handle = "fedex-ship-psdu-automation-brazil"
+
+[build]
+automatically_update_urls_on_dev = true
+
+[webhooks]
+api_version = "2026-04"
+
+[[webhooks.subscriptions]]
+topics = [ "orders/paid" ]
+uri = "/webhook/orders-paid"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_orders,write_fulfillments"
+
+[auth]
+redirect_urls = [ "https://fedex-shipping-api.onrender.com" ]
