@@ -4,6 +4,8 @@
 node_modules/
 dist/
 .shopify/
+# Projeto Shopify alternativo mantido fora do fluxo principal desta raiz.
+fed-ex-ship-psdu/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

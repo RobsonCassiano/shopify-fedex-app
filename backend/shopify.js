@@ -5,6 +5,8 @@
 'use strict'
 import fetch from 'node-fetch';
 
+const SHOPIFY_API_VERSION = process.env.SHOPIFY_API_VERSION || '2026-01';
+const DEFAULT_ORDERS_LIMIT = 10;
 let cachedAccessToken = null;
 let cachedAccessTokenExpiresAt = 0;
 
@@ -52,12 +54,13 @@ async function getShopifyAccessToken() {
     body
   });
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Shopify Access Token error: ${text}`);
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : {};
+
+  if (!response.ok || !data.access_token) {
+    throw new Error(`Shopify Access Token error: ${JSON.stringify(data)}`);
   }
 
-  const data = await response.json();
   cachedAccessToken = data.access_token;
   cachedAccessTokenExpiresAt = now + ((data.expires_in || 86400) * 1000);
 
@@ -73,24 +76,92 @@ async function getShopifyHeaders() {
   };
 }
 
-export async function getShopifyOrders() {
+async function shopifyGraphql(query, variables = {}) {
   const shopDomain = getShopDomain();
-  const res = await fetch(`https://${shopDomain}/admin/api/2024-01/orders.json?status=any&limit=10`, {
-    headers: await getShopifyHeaders()
+  const res = await fetch(`https://${shopDomain}/admin/api/${SHOPIFY_API_VERSION}/graphql.json`, {
+    method: 'POST',
+    headers: await getShopifyHeaders(),
+    body: JSON.stringify({
+      query,
+      variables
+    })
   });
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Shopify Orders error: ${text}`);
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : {};
+
+  if (!res.ok || data.errors || data.data?.orders?.errors) {
+    throw new Error(`Shopify GraphQL error: ${JSON.stringify(data)}`);
   }
 
-  const data = await res.json();
-  return data.orders || [];
+  return data.data;
+}
+
+function normalizeOrder(node) {
+  const customerName = (node.customer?.displayName || '').trim();
+  const [firstName = '', ...lastNameParts] = customerName ? customerName.split(/\s+/) : [];
+
+  return {
+    id: node.legacyResourceId || node.id,
+    name: node.name,
+    fulfillment_status: node.displayFulfillmentStatus?.toLowerCase() || null,
+    customer: {
+      first_name: firstName,
+      last_name: lastNameParts.join(' ')
+    }
+  };
+}
+
+export async function getShopifyOrders() {
+  return getShopifyOrdersConnection();
+}
+
+export async function getShopifyOrdersConnection({ first = DEFAULT_ORDERS_LIMIT, after } = {}) {
+  const query = `
+    query GetOrders($first: Int!, $after: String) {
+      orders(first: $first, after: $after, reverse: true, sortKey: PROCESSED_AT) {
+        edges {
+          cursor
+          node {
+            id
+            legacyResourceId
+            name
+            displayFulfillmentStatus
+            customer {
+              displayName
+            }
+          }
+        }
+        pageInfo {
+          hasNextPage
+          hasPreviousPage
+          startCursor
+          endCursor
+        }
+      }
+    }
+  `;
+
+  const normalizedFirst = Number.isFinite(Number(first)) ? Math.min(Math.max(Number(first), 1), 50) : DEFAULT_ORDERS_LIMIT;
+  const data = await shopifyGraphql(query, {
+    first: normalizedFirst,
+    after: after || null
+  });
+
+  return {
+    orders: (data.orders?.edges || []).map(({ node }) => normalizeOrder(node)),
+    pageInfo: data.orders?.pageInfo || {
+      hasNextPage: false,
+      hasPreviousPage: false,
+      startCursor: null,
+      endCursor: null
+    }
+  };
 }
 
 export async function createFulfillment(order, trackingNumber) {
   const shopDomain = getShopDomain();
-  const res = await fetch(`https://${shopDomain}/admin/api/2024-01/fulfillments.json`, {
+  const res = await fetch(`https://${shopDomain}/admin/api/${SHOPIFY_API_VERSION}/fulfillments.json`, {
     method: 'POST',
     headers: await getShopifyHeaders(),
     body: JSON.stringify({

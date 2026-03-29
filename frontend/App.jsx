@@ -7,6 +7,7 @@ const apiBaseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3001').rep
 
 function App() {
   const [orders, setOrders] = useState([]);
+  const [pageInfo, setPageInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -19,11 +20,27 @@ function App() {
         const response = await fetch(`${apiBaseUrl}/orders`);
 
         if (!response.ok) {
-          throw new Error('Nao foi possivel carregar os pedidos.');
+          let message = 'Nao foi possivel carregar os pedidos.';
+
+          try {
+            const errorData = await response.json();
+            message = errorData?.details || errorData?.error || message;
+          } catch {
+            // Mantem a mensagem padrao quando a resposta nao for JSON.
+          }
+
+          throw new Error(message);
         }
 
         const data = await response.json();
-        setOrders(Array.isArray(data) ? data : []);
+        if (Array.isArray(data)) {
+          setOrders(data);
+          setPageInfo(null);
+          return;
+        }
+
+        setOrders(Array.isArray(data?.orders) ? data.orders : []);
+        setPageInfo(data?.pageInfo || null);
       } catch (loadError) {
         setError(loadError.message);
       } finally {
@@ -41,6 +58,7 @@ function App() {
 
       {loading ? <p>Carregando pedidos...</p> : null}
       {error ? <p className="text-danger">{error}</p> : null}
+      {!loading && !error && pageInfo?.hasNextPage ? <p className="text-muted">Existem mais pedidos disponiveis na Shopify.</p> : null}
 
       {!loading && !error ? (
         <table style={{ width: '100%', borderCollapse: 'collapse' }} border="1" cellPadding="10">

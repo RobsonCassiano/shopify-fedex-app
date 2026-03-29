@@ -7,6 +7,7 @@ Integracao entre Shopify e FedEx para consulta de pedidos e criacao de fulfillme
 ```text
 shopify-fedex-app/
 |-- backend/
+|-- extensions/
 |-- frontend/
 |-- index.html
 |-- .env.example
@@ -14,6 +15,16 @@ shopify-fedex-app/
 |-- package.json
 `-- README.md
 ```
+
+## Projeto principal
+
+Esta raiz e o projeto principal que deve ser commitado e publicado.
+
+- `backend/` contem a API Express e integracoes Shopify/FedEx
+- `frontend/` contem o painel web servido pelo backend
+- `extensions/checkout-ui/` contem a extensao criada pela Shopify CLI para a app desta raiz
+
+O diretorio `fed-ex-ship-psdu/` foi mantido separado e esta ignorado no Git da raiz para nao misturar dois apps Shopify diferentes no mesmo commit/deploy.
 
 ## Setup local
 
@@ -25,6 +36,7 @@ Copy-Item .env.example .env
 Preencha o `.env` com:
 
 - `SHOPIFY_SHOP_NAME`
+- `SHOPIFY_ACCESS_TOKEN`
 - `SHOPIFY_API_KEY`
 - `SHOPIFY_API_SECRET`
 - `SHOPIFY_LOCATION_ID`
@@ -43,6 +55,7 @@ Cadastre estas variaveis no serviço:
 ```env
 PORT=3001
 SHOPIFY_SHOP_NAME=automation-brazil.myshopify.com
+SHOPIFY_ACCESS_TOKEN=your_shopify_access_token
 SHOPIFY_API_KEY=your_shopify_client_id
 SHOPIFY_API_SECRET=your_shopify_client_secret
 SHOPIFY_LOCATION_ID=your_shopify_location_id

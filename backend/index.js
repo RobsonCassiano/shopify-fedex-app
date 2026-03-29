@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createFulfillment, getShopifyOrders } from './shopify.js';
+import { createFulfillment, getShopifyOrdersConnection } from './shopify.js';
 import { createFedexShipment } from './fedex.js';
 import { alreadyProcessed, markProcessed } from './storage.js';
 
@@ -43,6 +43,12 @@ app.use(cors({
   }
 }));
 app.use(express.json());
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
 app.use(express.static(distDir));
 
 app.get('/health', (req, res) => {
@@ -79,11 +85,16 @@ app.post('/webhook/orders-paid', async (req, res) => {
 // Listar pedidos para frontend
 app.get('/orders', async (req, res) => {
   try {
-    const orders = await getShopifyOrders();
-    res.json(orders);
+    const first = req.query.first;
+    const after = req.query.after;
+    const ordersConnection = await getShopifyOrdersConnection({ first, after });
+    res.json(ordersConnection);
   } catch (error) {
     console.error('Erro ao listar pedidos:', error);
-    res.status(500).json({ error: 'Nao foi possivel listar pedidos' });
+    res.status(500).json({
+      error: 'Nao foi possivel listar pedidos',
+      details: error.message
+    });
   }
 });
 
