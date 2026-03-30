@@ -35,11 +35,11 @@ Copy-Item .env.example .env
 
 Preencha o `.env` com:
 
-- `SHOPIFY_SHOP_NAME`
-- `SHOPIFY_ACCESS_TOKEN`
-- `SHOPIFY_API_KEY`
-- `SHOPIFY_API_SECRET`
+- `SHOPIFY_SHOP`
+- `SHOPIFY_CLIENT_ID`
+- `SHOPIFY_CLIENT_SECRET`
 - `SHOPIFY_LOCATION_ID`
+- `SHOPIFY_API_VERSION`
 - `FEDEX_API_KEY`
 - `FEDEX_SECRET_KEY`
 - `FEDEX_ACCOUNT_NUMBER`
@@ -50,15 +50,15 @@ Preencha o `.env` com:
 
 ## Render
 
-Cadastre estas variaveis no serviço:
+Cadastre estas variaveis no servico:
 
 ```env
 PORT=3001
-SHOPIFY_SHOP_NAME=automation-brazil.myshopify.com
-SHOPIFY_ACCESS_TOKEN=your_shopify_access_token
-SHOPIFY_API_KEY=your_shopify_client_id
-SHOPIFY_API_SECRET=your_shopify_client_secret
+SHOPIFY_SHOP=automation-brazil
+SHOPIFY_CLIENT_ID=your_shopify_client_id
+SHOPIFY_CLIENT_SECRET=your_shopify_client_secret
 SHOPIFY_LOCATION_ID=your_shopify_location_id
+SHOPIFY_API_VERSION=2026-01
 ALLOWED_ORIGIN=https://admin.shopify.com,https://fedex-shipping-api.onrender.com
 RENDER_SYNC_BASE_URL=https://fedex-shipping-api.onrender.com
 FEDEX_API_KEY=your_fedex_api_key
@@ -68,6 +68,8 @@ FEDEX_API_URL=https://apis.fedex.com
 VITE_API_URL=https://fedex-shipping-api.onrender.com
 NODE_ENV=production
 ```
+
+O backend continua aceitando `SHOPIFY_SHOP_NAME`, `SHOPIFY_API_KEY` e `SHOPIFY_API_SECRET` por compatibilidade, mas o padrao recomendado e usar os nomes acima, alinhados com a documentacao da Shopify.
 
 ## Comandos
 

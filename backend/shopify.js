@@ -11,10 +11,10 @@ let cachedAccessToken = null;
 let cachedAccessTokenExpiresAt = 0;
 
 function getShopDomain() {
-  const shop = process.env.SHOPIFY_SHOP_NAME || process.env.SHOPIFY_SHOP;
+  const shop = process.env.SHOPIFY_SHOP || process.env.SHOPIFY_SHOP_NAME;
 
   if (!shop) {
-    throw new Error('SHOPIFY_SHOP_NAME ou SHOPIFY_SHOP nao foi configurado');
+    throw new Error('SHOPIFY_SHOP ou SHOPIFY_SHOP_NAME nao foi configurado');
   }
 
   return shop.includes('.myshopify.com') ? shop : `${shop}.myshopify.com`;
@@ -32,11 +32,11 @@ async function getShopifyAccessToken() {
     return cachedAccessToken;
   }
 
-  const clientId = process.env.SHOPIFY_API_KEY;
-  const clientSecret = process.env.SHOPIFY_API_SECRET || process.env.SHOPIFY_API_PASSWORD;
+  const clientId = process.env.SHOPIFY_CLIENT_ID || process.env.SHOPIFY_API_KEY;
+  const clientSecret = process.env.SHOPIFY_CLIENT_SECRET || process.env.SHOPIFY_API_SECRET || process.env.SHOPIFY_API_PASSWORD;
 
   if (!clientId || !clientSecret) {
-    throw new Error('Configure SHOPIFY_ACCESS_TOKEN ou SHOPIFY_API_KEY + SHOPIFY_API_SECRET');
+    throw new Error('Configure SHOPIFY_ACCESS_TOKEN ou SHOPIFY_CLIENT_ID + SHOPIFY_CLIENT_SECRET');
   }
 
   const shopDomain = getShopDomain();
