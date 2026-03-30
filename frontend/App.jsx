@@ -10,6 +10,8 @@ function App() {
   const [pageInfo, setPageInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [shippingOrderId, setShippingOrderId] = useState('');
+  const [shippingMessage, setShippingMessage] = useState('');
 
   useEffect(() => {
     async function loadOrders() {
@@ -51,6 +53,46 @@ function App() {
     loadOrders();
   }, []);
 
+  async function handleShipOrder(order) {
+    try {
+      setShippingOrderId(order.id);
+      setShippingMessage('');
+      setError('');
+
+      const response = await fetch(`${apiBaseUrl}/orders/${encodeURIComponent(order.shopify_graphql_id)}/ship`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data?.details || data?.error || 'Nao foi possivel enviar o pedido para a FedEx.');
+      }
+
+      setOrders((currentOrders) =>
+        currentOrders.map((currentOrder) =>
+          currentOrder.id === order.id
+            ? { ...currentOrder, fulfillment_status: 'fulfilled' }
+            : currentOrder
+        )
+      );
+
+      if (data?.status === 'already_processed') {
+        setShippingMessage(`O pedido ${order.name || order.id} ja tinha sido processado.`);
+        return;
+      }
+
+      setShippingMessage(`Pedido ${order.name || order.id} enviado com sucesso para a FedEx.`);
+    } catch (shipError) {
+      setError(shipError.message);
+    } finally {
+      setShippingOrderId('');
+    }
+  }
+
   return (
     <div className="container">
       <h1>Pedidos Shopify</h1>
@@ -58,6 +100,7 @@ function App() {
 
       {loading ? <p>Carregando pedidos...</p> : null}
       {error ? <p className="text-danger">{error}</p> : null}
+      {shippingMessage ? <p>{shippingMessage}</p> : null}
       {!loading && !error && pageInfo?.hasNextPage ? <p className="text-muted">Existem mais pedidos disponiveis na Shopify.</p> : null}
 
       {!loading && !error ? (
@@ -82,8 +125,12 @@ function App() {
                   <td>{[order.customer?.first_name, order.customer?.last_name].filter(Boolean).join(' ') || 'Cliente sem nome'}</td>
                   <td>{order.fulfillment_status || 'Unfulfilled'}</td>
                   <td>
-                    <button className="btn-primary" disabled={order.fulfillment_status === 'fulfilled'}>
-                      Enviar FedEx
+                    <button
+                      className="btn-primary"
+                      disabled={order.fulfillment_status === 'fulfilled' || shippingOrderId === order.id}
+                      onClick={() => handleShipOrder(order)}
+                    >
+                      {shippingOrderId === order.id ? 'Enviando...' : 'Enviar FedEx'}
                     </button>
                   </td>
                 </tr>

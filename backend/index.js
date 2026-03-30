@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createFulfillment, getShopifyOrdersConnection } from './shopify.js';
+import { createFulfillment, getShopifyOrderById, getShopifyOrdersConnection } from './shopify.js';
 import { createFedexShipment } from './fedex.js';
 import { alreadyProcessed, markProcessed } from './storage.js';
 
@@ -93,6 +93,34 @@ app.get('/orders', async (req, res) => {
     console.error('Erro ao listar pedidos:', error);
     res.status(500).json({
       error: 'Nao foi possivel listar pedidos',
+      details: error.message
+    });
+  }
+});
+
+app.post('/orders/:id/ship', async (req, res) => {
+  try {
+    const order = await getShopifyOrderById(req.params.id);
+
+    if (await alreadyProcessed(order.id)) {
+      return res.status(200).json({ status: 'already_processed' });
+    }
+
+    const fedexPayload = transformToFedex(order);
+    const shipment = await createFedexShipment(fedexPayload);
+
+    await createFulfillment(order, shipment.trackingNumber);
+    await markProcessed(order.id);
+
+    res.status(200).json({
+      status: 'success',
+      trackingNumber: shipment.trackingNumber,
+      labelUrl: shipment.labelUrl || null
+    });
+  } catch (error) {
+    console.error('Erro ao enviar pedido para FedEx:', error);
+    res.status(500).json({
+      error: 'Nao foi possivel enviar o pedido para a FedEx',
       details: error.message
     });
   }

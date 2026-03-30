@@ -66,6 +66,7 @@ function normalizeOrder(node) {
 
   return {
     id: node.legacyResourceId || node.id,
+    shopify_graphql_id: node.id,
     name: node.name,
     fulfillment_status: node.displayFulfillmentStatus?.toLowerCase() || null,
     customer: {
@@ -119,6 +120,66 @@ export async function getShopifyOrdersConnection({ first = DEFAULT_ORDERS_LIMIT,
       startCursor: null,
       endCursor: null
     }
+  };
+}
+
+export async function getShopifyOrderById(id) {
+  const query = `
+    query GetOrder($id: ID!) {
+      order(id: $id) {
+        id
+        legacyResourceId
+        name
+        displayFulfillmentStatus
+        email
+        shippingAddress {
+          name
+          phone
+          address1
+          city
+          zip
+          countryCodeV2
+        }
+        lineItems(first: 50) {
+          edges {
+            node {
+              id
+              legacyResourceId
+              quantity
+              name
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  const data = await shopifyGraphql(query, { id });
+  const order = data.order;
+
+  if (!order) {
+    throw new Error('Pedido Shopify nao encontrado');
+  }
+
+  return {
+    id: order.legacyResourceId || order.id,
+    shopify_graphql_id: order.id,
+    name: order.name,
+    fulfillment_status: order.displayFulfillmentStatus?.toLowerCase() || null,
+    email: order.email || '',
+    shipping_address: {
+      name: order.shippingAddress?.name || '',
+      phone: order.shippingAddress?.phone || '',
+      address1: order.shippingAddress?.address1 || '',
+      city: order.shippingAddress?.city || '',
+      zip: order.shippingAddress?.zip || '',
+      country_code: order.shippingAddress?.countryCodeV2 || ''
+    },
+    line_items: (order.lineItems?.edges || []).map(({ node }) => ({
+      id: node.legacyResourceId || node.id,
+      quantity: node.quantity,
+      name: node.name
+    }))
   };
 }
 
