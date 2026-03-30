@@ -7,7 +7,6 @@ Integracao entre Shopify e FedEx para consulta de pedidos e criacao de fulfillme
 ```text
 shopify-fedex-app/
 |-- backend/
-|-- extensions/
 |-- frontend/
 |-- index.html
 |-- .env.example
@@ -22,7 +21,6 @@ Esta raiz e o projeto principal que deve ser commitado e publicado.
 
 - `backend/` contem a API Express e integracoes Shopify/FedEx
 - `frontend/` contem o painel web servido pelo backend
-- `extensions/checkout-ui/` contem a extensao criada pela Shopify CLI para a app desta raiz
 
 O diretorio `fed-ex-ship-psdu/` foi mantido separado e esta ignorado no Git da raiz para nao misturar dois apps Shopify diferentes no mesmo commit/deploy.
 
