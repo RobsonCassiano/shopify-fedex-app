@@ -107,7 +107,7 @@ function transformToFedex(order) {
     requestedShipment: {
       shipper: {
         contact: { personName: "Sua Empresa" },
-        address: { streetLines: ["Rua Exemplo 123"], city: "São Paulo", postalCode: "01000-000", countryCode: "BR" }
+        address: { streetLines: ["Rua Exemplo 123"], city: "Sao Paulo", postalCode: "01000-000", countryCode: "BR" }
       },
       recipients: [{
         contact: {
@@ -121,7 +121,7 @@ function transformToFedex(order) {
           countryCode: order.shipping_address?.country_code || ''
         }
       }],
-      serviceType: "FEDEX_EXPRESS_SAVER",
+      serviceType: "INTERNATIONAL_ECONOMY",
       packagingType: "YOUR_PACKAGING",
       shipmentSpecialServices: {
         specialServiceTypes: ["ELECTRONIC_TRADE_DOCUMENTS"]

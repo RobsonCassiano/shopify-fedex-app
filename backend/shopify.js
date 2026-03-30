@@ -43,7 +43,15 @@ async function shopifyGraphql(query, variables = {}) {
   });
 
   const text = await res.text();
-  const data = text ? JSON.parse(text) : {};
+  let data = {};
+
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error(`Shopify GraphQL returned non-JSON response: ${text.slice(0, 200)}`);
+    }
+  }
 
   if (!res.ok || data.errors || data.data?.orders?.errors) {
     throw new Error(`Shopify GraphQL error: ${JSON.stringify(data)}`);
@@ -130,10 +138,15 @@ export async function createFulfillment(order, trackingNumber) {
     })
   });
 
+  const text = await res.text();
+
   if (!res.ok) {
-    const text = await res.text();
     throw new Error(`Shopify Fulfillment error: ${text}`);
   }
 
-  return await res.json();
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    throw new Error(`Shopify Fulfillment returned non-JSON response: ${text.slice(0, 200)}`);
+  }
 }
