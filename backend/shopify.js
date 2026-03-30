@@ -7,8 +7,6 @@ import fetch from 'node-fetch';
 
 const SHOPIFY_API_VERSION = process.env.SHOPIFY_API_VERSION || '2026-01';
 const DEFAULT_ORDERS_LIMIT = 10;
-let cachedAccessToken = null;
-let cachedAccessTokenExpiresAt = 0;
 
 function getShopDomain() {
   const shop = process.env.SHOPIFY_SHOP || process.env.SHOPIFY_SHOP_NAME;
@@ -21,50 +19,7 @@ function getShopDomain() {
 }
 
 async function getShopifyAccessToken() {
-  const staticToken = process.env.SHOPIFY_ACCESS_TOKEN;
-
-  if (staticToken) {
-    return staticToken;
-  }
-
-  const now = Date.now();
-  if (cachedAccessToken && cachedAccessTokenExpiresAt > now + 60_000) {
-    return cachedAccessToken;
-  }
-
-  const clientId = process.env.SHOPIFY_CLIENT_ID || process.env.SHOPIFY_API_KEY;
-  const clientSecret = process.env.SHOPIFY_CLIENT_SECRET || process.env.SHOPIFY_API_SECRET || process.env.SHOPIFY_API_PASSWORD;
-
-  if (!clientId || !clientSecret) {
-    throw new Error('Configure SHOPIFY_ACCESS_TOKEN ou SHOPIFY_CLIENT_ID + SHOPIFY_CLIENT_SECRET');
-  }
-
-  const shopDomain = getShopDomain();
-  const body = new URLSearchParams({
-    grant_type: 'client_credentials',
-    client_id: clientId,
-    client_secret: clientSecret
-  });
-
-  const response = await fetch(`https://${shopDomain}/admin/oauth/access_token`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    body
-  });
-
-  const text = await response.text();
-  const data = text ? JSON.parse(text) : {};
-
-  if (!response.ok || !data.access_token) {
-    throw new Error(`Shopify Access Token error: ${JSON.stringify(data)}`);
-  }
-
-  cachedAccessToken = data.access_token;
-  cachedAccessTokenExpiresAt = now + ((data.expires_in || 86400) * 1000);
-
-  return cachedAccessToken;
+  return process.env.SHOPIFY_ACCESS_TOKEN;
 }
 
 async function getShopifyHeaders() {
